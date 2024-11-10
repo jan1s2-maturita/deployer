@@ -1,0 +1,3 @@
+[submodule "app/shared_models"]
+	path = app/shared_models
+	url = git@github.com:jan1s2-maturita/shared_models.git
