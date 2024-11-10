@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, select
 from .config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
-from .sql_models import model as sql_model
-from .sql_models.model import Flags, User
+from .shared_models.model import Flags, User, Base
 
 # def get_db_connection():
     # return psycopg2.connect(
@@ -14,7 +13,7 @@ from .sql_models.model import Flags, User
 # connect ORM
 def get_db_connection():
     engine = create_engine(f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
-    sql_model.Base.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
     return engine
 
 def get_image_manifest(image_id):
