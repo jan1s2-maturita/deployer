@@ -4,6 +4,11 @@ from .db_helper import get_image_manifest, get_flags
 from .config import DEPLOY_NAMESPACE, KUBERNETES_KEY, KUBERNETES_URL, REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD
 from pydantic import BaseModel
 import redis
+from .config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
+from .shared_models.db_connect import Database
+
+db = Database(DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME)
+
 app = FastAPI()
 
 
@@ -23,7 +28,7 @@ class Data(BaseModel):
     image_id: int
 
 def create_in_k8s(image_id):
-    manifest = get_image_manifest(image_id)
+    manifest = get_image_manifest(db, image_id)
     v1 = get_k8s_config()
     return v1.create_namespaced_pod(DEPLOY_NAMESPACE, manifest)
 
@@ -40,7 +45,7 @@ def create_in_redis(user_id, image_id):
 def create_details(image_id):
     flags = get_flags(image_id)
     r = get_redis()
-    r.hset(image_id, "flags", flags)
+    r.hset(image_id, "flags", )
 
 
 @app.post("/")
