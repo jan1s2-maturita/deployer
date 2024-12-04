@@ -1,15 +1,19 @@
 from fastapi import FastAPI
 from kubernetes import client
 from .db_helper import get_image_manifest, get_flags
-from .config import DEPLOY_NAMESPACE, KUBERNETES_KEY, KUBERNETES_URL, REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD
+from .config import KUBERNETES_KEY, KUBERNETES_URL, REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD
 from pydantic import BaseModel
 import redis
 from .config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
 from .shared_models.db_connect import Database
+import json
 
 db = Database(DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME)
 
 app = FastAPI()
+
+
+
 
 
 def get_k8s_config():
@@ -22,18 +26,25 @@ def get_k8s_config():
     v1 = client.CoreV1Api(client.ApiClient(configuration))
     return v1
 
+class NamespaceRequest(BaseModel):
+    name: str
+
+@app.post("/namespace/create")
+def create_namespace(request: NamespaceRequest):
+    v1 = get_k8s_config()
+    body = client.V1Namespace(metadata=client.V1ObjectMeta(name=request.name))
+    return v1.create_namespace(body)
 
 class Data(BaseModel):
     user_id: int
     image_id: int
 
-def create_in_k8s(image_id):
+def create_in_k8s(user_id, image_id):
     manifest = get_image_manifest(db, image_id)
     v1 = get_k8s_config()
-    return v1.create_namespaced_pod(DEPLOY_NAMESPACE, manifest)
+    return v1.create_namespaced_pod(user_id, manifest)
 
 def get_redis():
-    assert (REDIS_HOST and REDIS_PORT and REDIS_DB and REDIS_USER and REDIS_PASSWORD)
     return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, username=REDIS_USER, password=REDIS_PASSWORD)
 
 def create_in_redis(user_id, image_id):
@@ -45,14 +56,14 @@ def create_in_redis(user_id, image_id):
 def create_details(image_id):
     flags = get_flags(image_id)
     r = get_redis()
-    r.hset(image_id, "flags", )
+    r.hset(image_id, "flags", json.dumps(flags))
 
 
 @app.post("/")
 def create_instance(data: Data):
     user_id = data.user_id
     image_id = data.image_id
-    create_in_k8s(image_id)
+    create_in_k8s(user_id, image_id)
     create_in_redis(user_id, image_id)
     create_details(image_id)
     return {"status": "success"}
