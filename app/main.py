@@ -26,20 +26,27 @@ def get_k8s_config():
     v1 = client.CoreV1Api(client.ApiClient(configuration))
     return v1
 
-class NamespaceRequest(BaseModel):
-    name: str
-
-@app.post("/namespace/create")
-def create_namespace(request: NamespaceRequest):
+def create_namespace(name: str):
     v1 = get_k8s_config()
-    body = client.V1Namespace(metadata=client.V1ObjectMeta(name=request.name))
+    body = client.V1Namespace(metadata=client.V1ObjectMeta(name=name))
     return v1.create_namespace(body)
+
+def namespace_exists(name: str):
+    v1 = get_k8s_config()
+    namespaces = v1.list_namespace()
+    for ns in namespaces.items:
+        if ns.metadata.name == name:
+            return True
+    return False
+
 
 class Data(BaseModel):
     user_id: int
     image_id: int
 
 def create_in_k8s(user_id, image_id):
+    if not namespace_exists(user_id):
+        create_namespace(user_id)
     manifest = get_image_manifest(db, image_id)
     v1 = get_k8s_config()
     return v1.create_namespaced_pod(user_id, manifest)
