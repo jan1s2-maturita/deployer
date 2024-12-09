@@ -1,11 +1,13 @@
-from fastapi import FastAPI
+from typing import Annotated
+from fastapi import FastAPI, HTTPException, Header
 from kubernetes import client
-from .config import REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD, KUBERNETES_KEY, KUBERNETES_URL
+from .config import REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD, KUBERNETES_KEY, KUBERNETES_URL, PUBLIC_KEY_PATH
 from .shared_models.k8s_helper import Kubernetes
 from pydantic import BaseModel
 from .config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
 from .shared_models.db_connect import Database
 from .shared_models.redis_helper import RedisConnector
+from jwt import decode
 import json
 
 
@@ -16,15 +18,22 @@ kube = Kubernetes(KUBERNETES_KEY, KUBERNETES_URL)
 redis_conn = RedisConnector(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, user=REDIS_USER, password=REDIS_PASSWORD)
 
 class Data(BaseModel):
-    user_id: int
+    # user_id: int
     image_id: int
 
 
 
 
 @app.post("/")
-def create_instance(data: Data):
-    user_id = data.user_id
+def create_instance(x_token: Annotated[str, Header()], data: Data):
+    payload = None
+    try:
+        with open(PUBLIC_KEY_PATH, 'r') as f:
+            public_key = f.read()
+            payload = decode(x_token, public_key, algorithms=['RS256'])
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id = payload["id"]
     image_id = data.image_id
     kube.create_in_k8s(db=db, user_id=user_id, image_id=image_id)
     redis_conn.create_instance(user_id=user_id, image_id=image_id)
