@@ -1,14 +1,12 @@
 from typing import Annotated
 from fastapi import FastAPI, HTTPException, Header
-from kubernetes import client
-from .config import REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD, KUBERNETES_KEY, KUBERNETES_URL, PUBLIC_KEY_PATH
-from .shared_models.k8s_helper import Kubernetes
 from pydantic import BaseModel
+from .config import REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD, KUBERNETES_KEY, KUBERNETES_URL, PUBLIC_KEY_PATH
 from .config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
+from .shared_models.k8s_helper import Kubernetes
 from .shared_models.db_connect import Database
 from .shared_models.redis_helper import RedisConnector
 from jwt import decode
-import json
 
 
 app = FastAPI()
