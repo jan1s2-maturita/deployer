@@ -21,7 +21,7 @@ async def init(app: FastAPI):
     db = Database(DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME)
     yield
 
-app = FastAPI()
+app = FastAPI(lifespan=init)
 
 
 class Data(BaseModel):
