@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
@@ -8,19 +9,26 @@ from .shared_models.db_connect import Database
 from .shared_models.redis_helper import RedisConnector
 from jwt import decode
 
+kube: Kubernetes
+r: RedisConnector
+db: Database
+
+@asynccontextmanager
+async def init(app: FastAPI):
+    global kube
+    global r
+    global db
+    kube = Kubernetes(key=KUBERNETES_KEY, url=KUBERNETES_URL)
+    r = RedisConnector(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD, user=REDIS_USER)
+    db = Database(DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME)
+    yield
 
 app = FastAPI()
 
-db = Database(DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME)
-kube = Kubernetes(KUBERNETES_KEY, KUBERNETES_URL)
-redis_conn = RedisConnector(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, user=REDIS_USER, password=REDIS_PASSWORD)
 
 class Data(BaseModel):
     # user_id: int
     image_id: int
-
-
-
 
 @app.post("/")
 def create_instance(x_token: Annotated[str, Header()], data: Data):
@@ -34,6 +42,6 @@ def create_instance(x_token: Annotated[str, Header()], data: Data):
     user_id = payload["id"]
     image_id = data.image_id
     kube.create_in_k8s(db=db, user_id=user_id, image_id=image_id)
-    redis_conn.create_instance(user_id=user_id, image_id=image_id)
+    r.create_instance(user_id=user_id, image_id=image_id)
     return {"status": "success"}
 
