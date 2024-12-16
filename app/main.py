@@ -26,7 +26,7 @@ app = FastAPI(lifespan=init)
 
 class Data(BaseModel):
     # user_id: int
-    image_id: int
+    challenge_id: int
 
 @app.post("/")
 def create_instance(x_token: Annotated[str, Header()], data: Data):
@@ -38,8 +38,8 @@ def create_instance(x_token: Annotated[str, Header()], data: Data):
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id = payload["id"]
-    image_id = data.image_id
-    kube.create_in_k8s(db=db, user_id=user_id, image_id=image_id)
+    image_id = data.challenge_id
+    kube.create_in_k8s(db=db, user_id=user_id, challenge_id=image_id)
     r.create_instance(user_id=user_id, image_id=image_id)
     return {"status": "success"}
 
