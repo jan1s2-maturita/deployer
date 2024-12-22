@@ -43,3 +43,6 @@ def create_instance(x_token: Annotated[str, Header()], data: Data):
     r.create_instance(user_id=user_id, image_id=image_id)
     return {"status": "success"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
