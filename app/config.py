@@ -1,6 +1,5 @@
 import os
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-DEPLOY_NAMESPACE = os.environ.get('DEPLOY_NAMESPACE', 'dev')
 KUBERNETES_KEY = os.environ.get('KUBERNETES_KEY', 'k8s_key')
 KUBERNETES_URL = os.environ.get('KUBENETES_URL', 'https://kubernetes.default.svc.cluster.local')
 
