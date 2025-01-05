@@ -30,6 +30,7 @@ class Data(BaseModel):
 
 @app.post("/")
 def create_instance(x_token: Annotated[str, Header()], data: Data):
+    print(f"creating instance {data}")
     payload = None
     try:
         with open(PUBLIC_KEY_PATH, 'r') as f:
@@ -39,7 +40,9 @@ def create_instance(x_token: Annotated[str, Header()], data: Data):
         raise HTTPException(status_code=401, detail="Invalid token")
     user_id = payload["sub"]
     image_id = data.challenge_id
+    print(f"creating instance for user {user_id} and challenge {image_id}")
     kube.create_in_k8s(db=db, user_id=user_id, challenge_id=image_id)
+    print("Redis")
     r.create_instance(user_id=user_id, image_id=image_id)
     return {"status": "success"}
 
