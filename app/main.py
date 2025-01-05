@@ -37,7 +37,7 @@ def create_instance(x_token: Annotated[str, Header()], data: Data):
             payload = decode(x_token, public_key, algorithms=['RS256'])
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid token")
-    user_id = payload["id"]
+    user_id = payload["sub"]
     image_id = data.challenge_id
     kube.create_in_k8s(db=db, user_id=user_id, challenge_id=image_id)
     r.create_instance(user_id=user_id, image_id=image_id)
